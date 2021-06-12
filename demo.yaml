@@ -1,0 +1,172 @@
+Metadata:
+  Name: EBS R12 Server Provisioning
+  Version: 0.0.1
+Description: "This YAML provisions the EBS R12 and its Dependencies"
+
+Parameters:
+  S3BucketName:
+    Description: S3 bucket Which Stores Preinit Artifacts
+    Type: String
+  env:
+    Description: S3 bucket Which Stores Preinit Artifacts
+    Type: String
+    Default: dev
+    AllowedValues:
+        - dev
+Mappings:
+  RegionMap:
+    us-west-2:
+      AMI: ami-00aa0a1b208ece144  #ami-0cf6f5c8a62fa5da6
+
+  InstanceSettings:
+    dev:
+      VpcId: vpc-0aa3edae37ef2b522
+      KeyName: ebiz
+      SubnetIDPub: subnet-04ba2e41fec23675f
+      SubnetIDPri: subnet-0a2005dd094a25bb8
+      AppSG: sg-07deece58aa9800d4
+      InstanceSize: m5.large
+
+Resources:
+    ALBListener:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties:
+        DefaultActions:
+          - Type: forward
+            TargetGroupArn:
+              Ref: EC2TargetGroup
+        LoadBalancerArn:
+            Ref: ApplicationLoadBalancer
+        Port: 80
+        Protocol: HTTP
+    ApplicationLoadBalancer:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Properties:
+        Scheme: internet-facing # or internal
+        Subnets:
+        - !FindInMap [InstanceSettings, !Ref env, SubnetIDPub]
+        - !FindInMap [InstanceSettings, !Ref env, SubnetIDPri]
+        SecurityGroups:
+        - !FindInMap [InstanceSettings, !Ref env, AppSG]
+    EC2TargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+          HealthCheckIntervalSeconds: 30
+          HealthCheckProtocol: HTTP
+          HealthCheckTimeoutSeconds: 15
+          HealthyThresholdCount: 5
+          Matcher:
+            HttpCode: '200'
+          Name: demo3
+          Port: 80
+          Protocol: HTTP
+          TargetGroupAttributes:
+          - Key: deregistration_delay.timeout_seconds
+            Value: '20'
+          Targets:
+          - Id:
+              Ref: AMIBAKERY
+            Port: 80
+          UnhealthyThresholdCount: 3
+          VpcId: vpc-0aa3edae37ef2b522
+          Tags:
+          - Key: Name
+            Value: EC2TargetGroup
+          - Key: Port
+            Value: 80
+
+
+    #CommandRunner:
+        #DependsOn: AMIBAKERY
+        #Type: AWSUtility::CloudFormation::CommandRunner
+        #Properties:
+          #Command: aws s3 ls  > /command-output.txt
+          #LogGroup: my-cloudwatch-log-group
+          #Role: awsutility-cloudformation-commandrun-ExecutionRole-65A39JQJPFT3
+
+
+    InstanceProfile:
+        Type: AWS::IAM::InstanceProfile
+        Properties:
+          Path: /
+          Roles:
+            - "eBiz-EC2-Permissions"
+
+    RootVolume:
+          Type: AWS::EC2::Volume
+          Properties:
+            #AutoEnableIO: Boolean
+            AvailabilityZone: us-west-2a
+            Encrypted: false
+            #Iops: Integer
+            #KmsKeyId: String
+            #MultiAttachEnabled: Boolean
+            #OutpostArn: String
+            #Size: Integer
+            SnapshotId: snap-0dda492f8f8c3992a
+            Tags:
+              - Key: Name
+                Value: RootVolume
+
+    MountPoint:
+          Type: AWS::EC2::VolumeAttachment
+          Properties:
+            InstanceId: !Ref AMIBAKERY
+            VolumeId: !Ref RootVolume
+            Device: /dev/sdf
+    AMIBAKERY:
+        Type: "AWS::EC2::Instance"
+        Properties:
+            ImageId:
+              Fn::FindInMap:
+              - RegionMap
+              - !Ref AWS::Region
+              - AMI
+            InstanceType: !FindInMap [InstanceSettings, !Ref env, InstanceSize]
+            IamInstanceProfile: !Ref InstanceProfile
+            KeyName:
+              Fn::FindInMap:
+              - InstanceSettings
+              - !Ref env
+              - KeyName
+            Tenancy: "default"
+            SubnetId: !FindInMap [InstanceSettings, !Ref env, SubnetIDPub]
+            EbsOptimized: false
+            SecurityGroupIds:
+              - !FindInMap [InstanceSettings, !Ref env, AppSG]
+            SourceDestCheck: true
+            BlockDeviceMappings:
+              - DeviceName: /dev/sda
+                NoDevice: {}
+            UserData:
+              Fn::Base64:
+                !Sub |
+                  #!/bin/bash
+                  yum update -y
+                  yum install -y httpd
+                  service httpd start
+                  chkconfig httpd on
+                  groupadd www
+                  usermod -a -G www ec2-user
+                  chown -R root:www /var/www
+                  chmod 2775 /var/www
+                  find /var/www -type d -exec chmod 2775 {} +
+                  find /var/www -type f -exec chmod 0664 {} +
+                  echo "<?php phpinfo(); ?>" > /var/www/html/phpinfo.php
+            Tags:
+              -
+                Key: "Name"
+                Value: !Sub ${env}-amibake-01
+Outputs:
+  ALBHostName:
+      Description: 'Application Load Balancer Hostname'
+      Value:
+        !GetAtt ApplicationLoadBalancer.DNSName
+  InstanceId:
+    Description: The instance ID of the app server
+    Value:
+      Ref: AMIBAKERY
+  PrivateIP:
+    Description: Private IP address of the web server
+    Value:
+      !GetAtt AMIBAKERY.PrivateIp
