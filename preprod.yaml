@@ -1,0 +1,303 @@
+Metadata:
+  Name: EBS R12 App Server Provisioning
+  Version: 0.0.1
+Description: "This YAML provisions the EBS R12 and its Dependencies"
+Parameters:
+  env:
+    Type: String
+    AllowedValues:
+        - restacking
+        - proxy-prf-feb-2021
+        - proxy-sys-feb-2021
+        - preprod-interface-24thfeb2021
+        - prf-apex-01-2-March-2021
+        - dev-apex-01-March-2021
+        - GoldnenGb-new
+        - dev-app-01-new-18-June-2021
+        - dev-db-01-new-18-June-2021
+        - upg-db-01-21st-June-2021
+        - upg-app-01-21-June-2021
+        - pds-app-01-3rdJuly-2021
+        - pds-db-01-3rdJuly-2021
+        - ebiz-interface-restacked-01
+        - bastion-vpc-003d14391cf8cee33
+        - preprod-interface-20thJuly2021
+        - prf-db3-28thJune
+        - prf-db2-28thJune
+        - prf-app3-28th-June
+        - prf-app4-28th-June
+        - sys-app-01-11-July-2021
+        - sys-db-01-11-July-2021
+        - prf-app-01-12-July-2021
+        - prf-db1-12th-July-2021
+        - prf-app-2-12-July-2021
+        - bastion-vpc-2-vpc-03c867c5a8cfee61c
+        - sys-app-01-4-March-2021
+        - sys-db-01-4-March-2021
+  S3BucketLocation:
+    Description: Pass S3 bucket Location which is generated from preinit.sh script
+    Type: String
+  SourceEC2ID:
+    Description: Enter Source EC2 Instance ID
+    Type: String
+  DestEC2ID:
+    Description: Enter Destination EC2 Instance ID
+    Type: String
+  AvailabilityZone:
+    Description: Enter AvailabilityZone Name of EC2 Instance
+    Type: String
+
+Mappings:
+  RegionMap:
+    us-west-2:
+      APP1AMI: ami-0c00df90a7c93fc26
+  InstanceSettings:
+    restacking:
+      VpcId: vpc-08b08212956d03cb7
+      KeyName: devops
+      SubnetID1: subnet-0cbf6cb66f8d3fdd8
+      WebTierSG: sg-09a5fc76fb592e6ba
+      WebInstanceSize: t2.micro
+    proxy-prf-feb-2021:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz-tmp
+      SubnetID1: subnet-0f78914a42ae824a0
+      WebTierSG: sg-0f5ac755fc9b1e2ef
+      WebInstanceSize: t2.micro
+    proxy-sys-feb-2021:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz-tmp
+      SubnetID1: subnet-0a020adf93c08c6e9
+      WebTierSG: sg-0790be28201e8915e
+      WebInstanceSize: t2.micro
+    preprod-interface-24thfeb2021:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz-tmp
+      SubnetID1: subnet-0a020adf93c08c6e9
+      WebTierSG: sg-04348036b15e13592
+      WebInstanceSize: t2.small
+    prf-apex-01-2-March-2021:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-0d33b5aeb8efbc47a
+      WebTierSG: sg-04ee88702ca17e8ae
+      WebInstanceSize: m5.large
+    dev-apex-01-March-2021:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz
+      SubnetID1: subnet-0328995c96ba30bb7
+      WebTierSG: sg-044953f043aa726b5
+      WebInstanceSize: t2.medium
+    GoldnenGb-new:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz
+      SubnetID1: subnet-0bf3a8b74b0d4256f
+      WebTierSG: sg-08d5477ecdc1850ca
+      WebInstanceSize: m4.2xlarge
+    dev-app-01-new-18-June-2021:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz
+      SubnetID1: subnet-0328995c96ba30bb7
+      WebTierSG: sg-044953f043aa726b5
+      WebInstanceSize: r5.large
+    dev-db-01-new-18-June-2021:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz
+      SubnetID1: subnet-0bf3a8b74b0d4256f
+      WebTierSG: sg-0da5db705c3770caa
+      WebInstanceSize: r5d.4xlarge
+    upg-db-01-21st-June-2021:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-03eb058d6b9e20835
+      WebTierSG: sg-02425a4d40cbb8a07
+      WebInstanceSize: x1e.4xlarge
+    upg-app-01-21-June-2021:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-0d33b5aeb8efbc47a
+      WebTierSG: sg-014e07a3727a8d938
+      WebInstanceSize: r5.large
+    pds-app-01-3rdJuly-2021:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-0d33b5aeb8efbc47a
+      WebTierSG: sg-014e07a3727a8d938
+      WebInstanceSize: r5.large
+    pds-db-01-3rdJuly-2021:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-03eb058d6b9e20835
+      WebTierSG: sg-05b8168927f637923
+      WebInstanceSize: x1e.xlarge
+    ebiz-interface:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz
+      SubnetID1: subnet-0a020adf93c08c6e9
+      WebTierSG: sg-04348036b15e13592
+      WebInstanceSize: t2.micro
+    bastion-vpc-003d14391cf8cee33:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz-tmp
+      SubnetID1: subnet-0a020adf93c08c6e9
+      WebTierSG: sg-08d8df91cc28e5cdb
+      WebInstanceSize: t2.micro
+    preprod-interface-20thJuly2021:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz-tmp
+      SubnetID1: subnet-0a020adf93c08c6e9
+      WebTierSG: sg-04348036b15e13592
+      WebInstanceSize: t2.small
+    prf-db3-28thJune:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-0d4b8136aa79159cc
+      WebTierSG: sg-0b336d7bfa767daf0
+      WebInstanceSize: i3en.metal
+    prf-db2-28thJune:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-0d4b8136aa79159cc
+      WebTierSG: sg-0b336d7bfa767daf0
+      WebInstanceSize: i3en.metal
+    prf-app3-28th-June:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-02c42eedbb2a09e57
+      WebTierSG: sg-0b89a1f065fdd6cbf
+      WebInstanceSize: r5.4xlarge
+    prf-app4-28th-June:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-02c42eedbb2a09e57
+      WebTierSG: sg-0b89a1f065fdd6cbf
+      WebInstanceSize: r5.4xlarge
+    sys-app-01-11-July-2021:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz
+      SubnetID1: subnet-086ed16399011f92b
+      WebTierSG: sg-06914aa0bf4fa5f5e
+      WebInstanceSize: r5.4xlarge
+    sys-db-01-11-July-2021:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz
+      SubnetID1: subnet-0a428607c5a710070
+      WebTierSG: sg-08d5477ecdc1850ca
+      WebInstanceSize: i3en.metal
+    prf-app-01-12-July-2021:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-02c42eedbb2a09e57
+      WebTierSG: sg-0b89a1f065fdd6cbf
+      WebInstanceSize: r5.4xlarge
+    prf-db1-12th-July-2021:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-0d4b8136aa79159cc
+      WebTierSG: sg-0b336d7bfa767daf0
+      WebInstanceSize: i3en.metal
+    prf-app-2-12-July-2021:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-02c42eedbb2a09e57
+      WebTierSG: sg-0b89a1f065fdd6cbf
+      WebInstanceSize: r5.4xlarge
+    bastion-vpc-2-vpc-03c867c5a8cfee61c:
+      VpcId: vpc-03c867c5a8cfee61c
+      KeyName: ebiz
+      SubnetID1: subnet-04ad826dccee6a675
+      WebTierSG: sg-00c4d77a7e3120137
+      WebInstanceSize: t3.micro
+    sys-app-01-4-March-2021:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz
+      SubnetID1: subnet-086ed16399011f92b
+      WebTierSG: sg-06914aa0bf4fa5f5e
+      WebInstanceSize: r5.4xlarge
+    sys-db-01-4-March-2021:
+      VpcId: vpc-003d14391cf8cee33
+      KeyName: ebiz
+      SubnetID1: subnet-0a428607c5a710070
+      WebTierSG: sg-08d5477ecdc1850ca
+      WebInstanceSize: i3en.metal
+
+Resources:
+    InstanceProfile:
+        Type: AWS::IAM::InstanceProfile
+        Properties:
+          Path: /
+          Roles:
+            - "eBiz-EC2-Permissions"
+
+    eBizWebServer1:
+        Type: "AWS::EC2::Instance"
+        Properties:
+            ImageId:
+              Fn::FindInMap:
+              - RegionMap
+              - !Ref AWS::Region
+              - APP1AMI
+            InstanceType: !FindInMap [InstanceSettings, !Ref env, WebInstanceSize]
+            IamInstanceProfile: !Ref InstanceProfile
+            KeyName:
+              Fn::FindInMap:
+              - InstanceSettings
+              - !Ref env
+              - KeyName
+            Tenancy: "default"
+            SubnetId: !FindInMap [InstanceSettings, !Ref env, SubnetID1]
+            EbsOptimized: false
+            SecurityGroupIds:
+              - !FindInMap [InstanceSettings, !Ref env, WebTierSG]
+            SourceDestCheck: true
+            BlockDeviceMappings:
+              - DeviceName: /dev/sda
+                NoDevice: {}
+            UserData:
+              Fn::Base64:
+                !Sub |
+                  #!/bin/bash
+                  pip3 install boto3
+                  /usr/local/bin/aws s3 cp s3://${S3BucketLocation}/valattach2.py /tmp
+                  aws s3 cp s3://${S3BucketLocation}/valattach2.py /tmp
+                  python3 /tmp/valattach2.py ${SourceEC2ID} ${DestEC2ID} ${AvailabilityZone} >> /tmp/log-out.txt
+
+                  /usr/local/bin/aws s3 cp s3://${S3BucketLocation}/cronkup /tmp/
+                  aws s3 cp s3://${S3BucketLocation}/cronkup /tmp/
+                  cat /tmp/cronkup >> /var/spool/cron/root
+
+                  /usr/local/bin/aws s3 cp s3://${S3BucketLocation}/fstabbackup /tmp/
+                  aws s3 cp s3://${S3BucketLocation}/fstabbackup /tmp/
+                  cat /tmp/fstabbackup >> /etc/fstab
+
+                  /usr/local/bin/aws s3 cp s3://${S3BucketLocation}/etchostsbkp /tmp/etchostsbkp
+                  cat /tmp/etchostsbkp >> /etc/hosts
+                  aws s3 cp s3://${S3BucketLocation}/etchostsbkp /tmp/etchostsbkp
+
+                  /usr/local/bin/aws s3 cp s3://${S3BucketLocation}/etchostnamebkp /tmp/etchostnamebkp
+                  aws s3 cp s3://${S3BucketLocation}/etchostnamebkp /tmp/etchostnamebkp
+                  cat /tmp/etchostnamebkp > /etc/hostname
+
+                  /usr/local/bin/aws s3 cp s3://${S3BucketLocation}/mntin.txt /tmp/mntin.txt
+                  aws s3 cp s3://${S3BucketLocation}/mntin.txt /tmp/mntin.txt
+                  for mpoint in $(cat /tmp/mntin.txt); do mkdir $mpoint; done
+                  mount -a
+                  groupadd -g 54350 oinstall;groupadd -g 54351 dba
+                  useradd -u 54340 -g oinstall -G dba oragrid
+                  useradd -u 55311 -g oinstall -G dba applprf
+                  nohup chown oragrid:oinstall /interface; chown applprf:oinstall /prfebsaappl; chown oragrid:oinstall /backup; chown oragrid:oinstall /oragrid; chown applprf:oinstall /pfebsaappl-old; chown oragrid:oinstall /prfapplcsf; chown oragrid:oinstall /ebizprf; &
+
+            Tags:
+              -
+                Key: "Name"
+                Value: !Sub ${env}-restacked-18
+
+Outputs:
+  InstanceId1:
+    Description: The instance ID of the app server
+    Value:
+      Ref: eBizWebServer1
+  WebPrivateIP1:
+    Description: Private IP address of the web server
+    Value:
+      !GetAtt eBizWebServer1.PrivateIp
